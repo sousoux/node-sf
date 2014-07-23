@@ -19,6 +19,10 @@ function padRight(str, char, totalWidth) {
   return str;
 }
 
+function isNumeric(obj) {
+    return !isNaN(parseFloat(obj)) && isFinite(obj);
+}
+
 function formatNumber(num, format) {
   format = format || "0";
 
@@ -32,6 +36,88 @@ function formatNumber(num, format) {
     }
     var width = parseInt(hex[2]);
     str = padLeft(str, '0', width);
+    return str;
+  }
+
+  // pP aA|oO D M S d[#] m[#] s[#] P + - 
+  if (format[0].toUpperCase() == 'P') {
+    debugger;
+    if (format.length < 2)
+      return "No lat/long designator";
+    var isLat;
+    switch (format[1]) {
+      case 'a':
+      case 'A':
+        isLat = 1;
+        break;
+      case 'o':
+      case 'O':
+        isLat = 0;
+        break;
+      default:
+        return "Lat/Long designator should be A or O";
+    }
+    var neg;
+    var spos;
+    if (num < 0) {
+      neg = 1;
+      num = -num;
+      spos = (isLat ? 'S' : 'W');
+    } else {
+      neg = 0;
+      spos = (isLat ? 'N' : 'E');
+    }
+
+    var degrees = Math.floor(num);
+    var sdegrees = padLeft(degrees.toString(10), '0', (isLat ? 2 : 3));
+    var dmins = (num - degrees) * 60;
+    var mins = Math.floor(dmins);
+    var smins = padLeft(mins.toString(10), '0', 2);
+    var dsecs = (dmins - mins) * 60;
+    var secs = Math.floor(dsecs);
+    var ssecs = padLeft(secs.toString(10), '0', 2);
+
+    var str = "";
+    var i = 2;
+    while (i < format.length) {
+      switch (format[i]) {
+        case 'D':
+          str += sdegrees;
+          break;
+        case 'd':
+          var width = (format.length < i + 1 && isNumeric(format[i + 1]) ? parseInt(format[i++ + 1]) : 6);
+          str += Math.floor((num - degrees) * Math.pow(10, width)).toString(10);
+          break;
+        case 'M':
+          str += smins;
+          break;
+        case 'm':
+          var width = (format.length < i + 1 && isNumeric(format[i + 1]) ? parseInt(format[i++ + 1]) : 6);
+          str += Math.floor((dmins - mins) * Math.pow(10, width)).toString(10);
+          break;
+        case 'S':
+          str += ssecs;
+          break;
+        case 's':
+          var width = (format.length < i + 1 && isNumeric(format[i + 1]) ? parseInt(format[i++ + 1]) : 6);
+          str += Math.floor((dsecs - secs) * Math.pow(10, width)).toString(10);
+          break;
+        case 'P':
+          str += spos;
+          break;
+        case '+':
+          str += (neg ? '-' : '+');
+          break;
+        case '-':
+          if (neg)
+            str += '-';
+          break;
+        default:
+          str += format[i];
+          break;
+      }
+      i++;
+    }
     return str;
   }
 
@@ -818,15 +904,14 @@ sf.TimeSpan = function(milliseconds, seconds, minutes, hours, days) {
   return this;
 };
 
-if (typeof module !== 'undefined' && module.exports) {
+var module;
+if(module) {
   module.exports = sf;
 }
 
 var window;
 if (window) {
-  try {
-    define([], function() {
-      return sf;
-    });
-  } catch(e) {}
+  define([], function() {
+    return sf;
+  });
 }
