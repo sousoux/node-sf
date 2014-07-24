@@ -601,7 +601,36 @@ function getValue(args, fieldName) {
 
 function sf(formatString) {
   var result = '';
+  var escaped = 0;
   for (var i = 0; i < formatString.length;) {
+    if (escaped) {
+      switch (formatString[i]) {
+        case '\\':
+          result += '\\';
+          break;
+        case 'n':
+          result += '\n';
+          break;
+        case 'r':
+          result += '\r';
+          break;
+        case 't':
+          result += '\t';
+          break;
+        default:
+          result += formatString[i];
+      }
+      escaped = 0;
+      i++;
+      continue;
+    }
+
+    if (formatString[i] == '\\') {
+      escaped = 1;      
+      i++;
+      continue;
+    }
+
     if (formatString[i] == '}') {
       i++;
       if (formatString[i] == '}') {
@@ -611,6 +640,8 @@ function sf(formatString) {
       }
       throw new Error("Unescaped substitution");
     }
+
+
     if (formatString[i] == '{') {
       var spec = '';
       i++;
